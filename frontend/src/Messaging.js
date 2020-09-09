@@ -29,13 +29,16 @@ export const Messaging = () => {
         <div>
             <h1>Voice Chat - George</h1>
             <div>
+
+                {chat.map(i => {
+                    return (<pre> </pre>)
+                })}
+            </div>
+
+            <div>
                 <input onChange={msgHandle} /> <input type="button" value="Ok" onClick={sendMessage} />
             </div>
-            <div>
-                <pre>
-                    {JSON.stringify(chat)}
-                </pre>
-            </div>
+
 
         </div>
     )

@@ -19,25 +19,20 @@ const { add, get } = require('./services/cache-service')
 
 
 app.post("/register-session", (req, res) => {
-
-        const msg = { date: new Date(), message: "opening session", from: "app" }
+        const msg = [{ date: new Date(), message: "opening session", from: "app" }];
         add(req.body.tkn, msg);
         const chat = get(req.body.tkn)
-        res.json(JSON.parse(chat));
-
-
+        res.json(chat);
 });
 
 
 app.post("/store-message", (req, res) => {
 
         const chat = get(req.body.tkn);
-
         const msg = { date: new Date(), message: req.body.message, from: req.body.from }
         chat.push(msg);
-        add(chat)
-
-        res.json(JSON.parse(chat));
+        add(req.body.tkn, chat)
+        res.json(chat);
 });
 
 
