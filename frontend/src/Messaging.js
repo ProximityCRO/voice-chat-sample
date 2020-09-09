@@ -4,20 +4,27 @@ import { storeMessage, getChat } from './services/messaging-service';
 
 export const Messaging = () => {
 
+
+    const [msg, setMsg] = useState('');
+    const [chat, setChat] = useState([])
+    const [divMessages, setDivMessages] = useState(React.createRef());
+
+    const scrollToBottom = () => {
+        divMessages.current.scrollTop = divMessages.current.scrollHeight;
+    };
+
+
     fbMessaging.onMessage(payload => {
-        //console.log(payload.notification.body);
+
         const tkn = sessionStorage.getItem('tkn');
         const m = payload.notification.body;
 
         storeMessage(tkn, "app", m).then(r => {
-            console.log(r.data);
             setChat(r.data)
+            scrollToBottom();
         })
 
     })
-
-    const [msg, setMsg] = useState('');
-    const [chat, setChat] = useState([])
 
     const msgHandle = (e) => {
         setMsg(e.target.value);
@@ -26,11 +33,14 @@ export const Messaging = () => {
     const sendMessage = () => {
         const tkn = sessionStorage.getItem('tkn');
         storeMessage(tkn, "George", msg).then(r => {
-            console.log(r.data);
             setChat(r.data)
+            scrollToBottom();
+            setMsg('');
         })
 
     }
+
+
 
 
     useEffect(() => {
@@ -39,17 +49,24 @@ export const Messaging = () => {
 
         getChat(tkn).then(r => {
             setChat(r.data)
+            scrollToBottom();
         })
 
 
     }, [])
 
 
+    const onSubmit = (e) => {
+        e.preventDefault();
+        sendMessage();
+
+    }
+
     return (
         <div>
             <h1>Voice Chat - George</h1>
             <div className={"container"}>
-                <div>
+                <div style={{ width: "600px" }, { height: "600px" }} className={"overflow-auto"} ref={divMessages} >
 
 
                     {chat.map(i => {
@@ -62,11 +79,17 @@ export const Messaging = () => {
                         )
                     })}
                 </div>
-            </div>
-            <div>
-                <input onChange={msgHandle} /> <input type="submit" value="Ok" onClick={sendMessage} />
-            </div>
 
+                <div>
+                    <form onSubmit={onSubmit}>
+                        <div>
+                            <input className={"form-control"} onChange={msgHandle} value={msg} placeholder="Type a message" /> <input className={"btn btn-primary"} type="submit" value="Send" />
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
 
         </div>
     )
