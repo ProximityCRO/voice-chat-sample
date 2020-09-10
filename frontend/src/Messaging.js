@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { fbMessaging } from './firebaseInit';
 import { storeMessage, getChat } from './services/messaging-service';
+import MicRecorder from 'mic-recorder-to-mp3';
+
+const Mp3Recorder = new MicRecorder({ bitRate: 128 });
+
 
 export const Messaging = () => {
 
@@ -9,36 +13,73 @@ export const Messaging = () => {
     const [chat, setChat] = useState([])
     const [divMessages, setDivMessages] = useState(React.createRef());
 
+
+    /*  AUDIO  */
+    const [isRecording, setIsRecording] = useState(false);
+    const [blobURL, setBlobURL] = useState('');
+    const [isBlocked, setIsBlocked] = useState(false);
+    /*  AUDIO  */
+
+
+
+
+    const [inputMsg, setInputMsg] = useState(React.createRef());
+
     const scrollToBottom = () => {
         divMessages.current.scrollTop = divMessages.current.scrollHeight;
     };
 
 
     fbMessaging.onMessage(payload => {
-
         const tkn = sessionStorage.getItem('tkn');
         const m = payload.notification.body;
-
         storeMessage(tkn, "app", m).then(r => {
             setChat(r.data)
             scrollToBottom();
         })
-
     })
 
     const msgHandle = (e) => {
         setMsg(e.target.value);
-
     }
     const sendMessage = () => {
+
         const tkn = sessionStorage.getItem('tkn');
         storeMessage(tkn, "George", msg).then(r => {
             setChat(r.data)
             scrollToBottom();
             setMsg('');
         })
-
     }
+
+
+
+    /* AUDIO */
+    const start = () => {
+        if (isBlocked) {
+            console.log('Permission Denied');
+        } else {
+            Mp3Recorder
+                .start()
+                .then(() => {
+                    setIsRecording(true);
+                }).catch((e) => console.error(e));
+        }
+    };
+
+
+    const stop = () => {
+        Mp3Recorder
+            .stop()
+            .getMp3()
+            .then(([buffer, blob]) => {
+                const blobURL = URL.createObjectURL(blob)
+
+                setBlobURL(blobURL);
+                setIsRecording(false);
+            }).catch((e) => console.log(e));
+    };
+    /* AUDIO */
 
 
 
@@ -46,11 +87,24 @@ export const Messaging = () => {
     useEffect(() => {
 
         const tkn = sessionStorage.getItem('tkn');
-
         getChat(tkn).then(r => {
-            setChat(r.data)
+            setChat(r.data || [])
             scrollToBottom();
+            inputMsg.current.focus();
         })
+
+        navigator.getUserMedia({ audio: true },
+            () => {
+                console.log('Permission Granted');
+                setIsBlocked(false);
+            },
+            () => {
+                console.log('Permission Denied');
+                setIsBlocked(true);
+            },
+        );
+
+
 
 
     }, [])
@@ -81,12 +135,28 @@ export const Messaging = () => {
                 </div>
 
                 <div>
+
                     <form onSubmit={onSubmit}>
-                        <div>
-                            <input className={"form-control"} onChange={msgHandle} value={msg} placeholder="Type a message" /> <input className={"btn btn-primary"} type="submit" value="Send" />
+                        <div className={"row"}>
+                            <div className={"col-10"} >
+                                <input ref={inputMsg} className={"form-control"} onChange={msgHandle} value={msg} placeholder="Type a message" />
+                            </div>
+                            <div className={"col-1"} >
+                                <input className={"btn btn-primary"} type="submit" value="Send" />
+                            </div>
+                            <div className={"col-1"} >
+                                <input className={"btn btn-primary"} type="button" value="Record" />
+                            </div>
                         </div>
 
                     </form>
+
+                    <div>
+                        <button onClick={start} disabled={isRecording}>Record</button>
+                        <button onClick={stop} disabled={!isRecording}>Stop</button>
+                        <audio src={blobURL} controls="controls" />
+                    </div>
+
 
                 </div>
             </div>

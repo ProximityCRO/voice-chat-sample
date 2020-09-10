@@ -41,6 +41,7 @@ app.post("/store-message", (req, res) => {
         const msg = { date: new Date(), message: req.body.message, from: req.body.from }
         chat.push(msg);
         add(req.body.tkn, chat)
+        console.log({ status: "message received", ...msg })
         res.json(chat);
 });
 
